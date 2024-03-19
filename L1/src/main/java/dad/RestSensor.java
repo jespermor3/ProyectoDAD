@@ -18,6 +18,7 @@ import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.mysqlclient.MySQLConnectOptions;
 
 public class RestSensor extends AbstractVerticle {
 	
@@ -43,6 +44,7 @@ public class RestSensor extends AbstractVerticle {
 			}
 		});
 		
+		//MySQLConnectOptions connectOptions=new ;
 		router.route("/api/sensores*").handler(BodyHandler.create());
 		router.get("/api/sensores").handler(this::getAllWithParams);
 		router.get("/api/sensores").handler(this::getAll);
@@ -72,7 +74,7 @@ public class RestSensor extends AbstractVerticle {
 		Random rnd = new Random();
 		IntStream.range(0, number).forEach(elem -> {
 			int id = rnd.nextInt();
-			sensores.put(id, new Sensor(id, "Nombre_" + id, 
+			sensores.put(id, new Sensor(id,id+1, "Nombre_" + id, 
 					new Date(Calendar.getInstance().getTimeInMillis() + id).getTime(),  0.+id));
 		});
 		
@@ -82,7 +84,7 @@ public class RestSensor extends AbstractVerticle {
 		Random rnd = new Random();
 		IntStream.range(0, number).forEach(elem -> {
 			int id = rnd.nextInt();
-			actuadores.put(id, new Actuador(id, "Nombre_" + id, 
+			actuadores.put(id, new Actuador(id,id+1, "Nombre_" + id, 
 					new Date(Calendar.getInstance().getTimeInMillis() + id).getTime(),  id,"Tipo"+id));
 		});
 		
@@ -91,13 +93,10 @@ public class RestSensor extends AbstractVerticle {
 	private void createSomeDataPl(int number) {
 		Random rnd = new Random();
 		
-		List<Integer> auxac=actuadores.keySet().stream().toList();
-		List<Integer> auxsen=sensores.keySet().stream().toList();
+		
 		IntStream.range(0, number).forEach(elem -> {
 			int id = rnd.nextInt();
-			Integer rn=rnd.nextInt(0, number);
-			placa.put(id, new Placa(Integer.valueOf(id), "Nombre_" + id, auxsen.get(rn),
-					auxac.get(rn),auxac.get(rn+1)));
+			placa.put(id, new Placa(Integer.valueOf(id), "Nombre_" + id));
 		});
 		
 	}
@@ -303,9 +302,6 @@ public class RestSensor extends AbstractVerticle {
 		Placa ds = placa.get(id);
 		final Placa element = gson.fromJson(routingContext.getBodyAsString(), Placa.class);
 		ds.setNombre(element.getNombre());
-		ds.setSensorid(element.getSensorid());
-		ds.setActuador1id(element.getActuador1id());
-		ds.setActuador2id(element.getActuador2id());
 		placa.put(ds.getId(), ds);
 		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
 				.end(gson.toJson(element));

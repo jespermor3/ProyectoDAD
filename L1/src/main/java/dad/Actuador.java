@@ -4,23 +4,22 @@ import java.util.Objects;
 
 public class Actuador {
 	private Integer id;
+	private  Integer placaid;
 	private String nombre;
 	private Long fecha;
 	private Integer estado;
 	private String tipo;
-	public Actuador(Integer id, String nombre, Long fecha, Integer estado, String tipo) {
-		super();
-		this.id = id;
-		this.nombre = nombre;
-		this.fecha = fecha;
-		this.estado = estado;
-		this.tipo=tipo;
-	}
 	public Integer getId() {
 		return id;
 	}
 	public void setId(Integer id) {
 		this.id = id;
+	}
+	public Integer getPlacaid() {
+		return placaid;
+	}
+	public void setPlacaid(Integer placaid) {
+		this.placaid = placaid;
 	}
 	public String getNombre() {
 		return nombre;
@@ -48,7 +47,7 @@ public class Actuador {
 	}
 	@Override
 	public int hashCode() {
-		return Objects.hash(estado, fecha, id, nombre, tipo);
+		return Objects.hash(estado, fecha, id, nombre, placaid, tipo);
 	}
 	@Override
 	public boolean equals(Object obj) {
@@ -61,13 +60,23 @@ public class Actuador {
 		Actuador other = (Actuador) obj;
 		return Objects.equals(estado, other.estado) && Objects.equals(fecha, other.fecha)
 				&& Objects.equals(id, other.id) && Objects.equals(nombre, other.nombre)
-				&& Objects.equals(tipo, other.tipo);
+				&& Objects.equals(placaid, other.placaid) && Objects.equals(tipo, other.tipo);
 	}
 	@Override
 	public String toString() {
-		return "Actuador [id=" + id + ", nombre=" + nombre + ", fecha=" + fecha + ", estado=" + estado + ", tipo="
-				+ tipo + "]";
+		return "Actuador [id=" + id + ", placaid=" + placaid + ", nombre=" + nombre + ", fecha=" + fecha + ", estado="
+				+ estado + ", tipo=" + tipo + "]";
 	}
+	public Actuador(Integer id, Integer placaid, String nombre, Long fecha, Integer estado, String tipo) {
+		super();
+		this.id = id;
+		this.placaid = placaid;
+		this.nombre = nombre;
+		this.fecha = fecha;
+		this.estado = estado;
+		this.tipo = tipo;
+	}
+	
 	
 	
 
