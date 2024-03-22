@@ -1,12 +1,14 @@
 package dad;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.Objects;
 
 public class Actuador {
 	private Integer id;
 	private  Integer placaid;
 	private String nombre;
-	private Long fecha;
+	private Date fecha;
 	private Integer estado;
 	private String tipo;
 	public Integer getId() {
@@ -27,10 +29,10 @@ public class Actuador {
 	public void setNombre(String nombre) {
 		this.nombre = nombre;
 	}
-	public Long getFecha() {
+	public Date getFecha() {
 		return fecha;
 	}
-	public void setFecha(Long fecha) {
+	public void setFecha(Date fecha) {
 		this.fecha = fecha;
 	}
 	public Integer getEstado() {
@@ -67,7 +69,7 @@ public class Actuador {
 		return "Actuador [id=" + id + ", placaid=" + placaid + ", nombre=" + nombre + ", fecha=" + fecha + ", estado="
 				+ estado + ", tipo=" + tipo + "]";
 	}
-	public Actuador(Integer id, Integer placaid, String nombre, Long fecha, Integer estado, String tipo) {
+	public Actuador(Integer id, Integer placaid, String nombre, Date fecha, Integer estado, String tipo) {
 		super();
 		this.id = id;
 		this.placaid = placaid;

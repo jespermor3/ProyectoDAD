@@ -1,14 +1,17 @@
 package dad;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.Objects;
 
 public class Sensor {
 	private Integer id;
 	private Integer placaid;
 	private String nombre;
-	private Long fecha;
+	private Date fecha;
 	private Double valor;
-	public Sensor(Integer id, Integer placaid, String nombre, Long fecha, Double valor) {
+	public Sensor(Integer id, Integer placaid, String nombre, Date fecha, Double valor) {
 		super();
 		this.id = id;
 		this.placaid = placaid;
@@ -18,7 +21,8 @@ public class Sensor {
 	}
 	@Override
 	public String toString() {
-		return "Sensor [id=" + id + ", placaid=" + placaid + ", nombre=" + nombre + ", fecha=" + fecha + ", valor="
+		LocalDate fecha2=LocalDate.ofInstant(fecha.toInstant(), ZoneId.systemDefault());
+		return "Sensor [id=" + id + ", placaid=" + placaid + ", nombre=" + nombre + ", fecha=" + fecha2 + ", valor="
 				+ valor + "]";
 	}
 	@Override
@@ -56,10 +60,10 @@ public class Sensor {
 	public void setNombre(String nombre) {
 		this.nombre = nombre;
 	}
-	public Long getFecha() {
+	public Date getFecha() {
 		return fecha;
 	}
-	public void setFecha(Long fecha) {
+	public void setFecha(Date fecha) {
 		this.fecha = fecha;
 	}
 	public Double getValor() {
