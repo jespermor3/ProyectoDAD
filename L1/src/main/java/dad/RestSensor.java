@@ -15,6 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.mysqlclient.MySQLPool;
@@ -42,12 +43,22 @@ public class RestSensor extends AbstractVerticle {
 				.setDatabase("proyectodad").setUser("chema").setPassword("chema");
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
+		Router router = Router.router(vertx);
+		vertx.createHttpServer().requestHandler(router::handle).listen(8085, result -> {
+			if (result.succeeded()) {
+				startFuture.complete();
+			} else {
+				startFuture.fail(result.cause());
+			}
+		});
 
 		mySqlClient = MySQLPool.pool(vertx, connectOptions, poolOptions);
 		
 		getAllsen();
 		getAllac();
 		getAllpla();
+		getByidsen(1);	
+		getByidAc(1);
 
 	}
 	private void getAllsen() {
@@ -65,6 +76,60 @@ public class RestSensor extends AbstractVerticle {
 				System.out.println(result.toString());
 			} else {
 				System.out.println("Error: " + res.cause().getLocalizedMessage());
+			}
+		});
+	}
+	
+	private void getByidsen(Integer par) {
+		mySqlClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().preparedQuery("SELECT * FROM proyectodad.sensores WHERE placaid = ?",
+						Tuple.of(par), res -> {
+							if (res.succeeded()) {
+								// Get the result set
+								RowSet<Row> resultSet = res.result();
+								System.out.println(resultSet.size());
+								JsonArray result = new JsonArray();
+								for (Row elem : resultSet) {
+									result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),
+											elem.getInteger("placaid"), elem.getString("nombre"),
+											localDateToDate(elem.getLocalDate("fecha")), elem.getDouble("valor"))));
+								}
+								System.out.println(result.toString());
+							} else {
+								System.out.println("Error: " + res.cause().getLocalizedMessage());
+							}
+							connection.result().close();
+						});
+			} else {
+				System.out.println(connection.cause().toString());
+			}
+		});
+	}
+	
+	private void getByidAc(Integer par) {
+		mySqlClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().preparedQuery("SELECT * FROM proyectodad.actuadores WHERE placaid = ?",
+						Tuple.of(par), res -> {
+							if (res.succeeded()) {
+								// Get the result set
+								RowSet<Row> resultSet = res.result();
+								System.out.println(resultSet.size());
+								JsonArray result = new JsonArray();
+								for (Row elem : resultSet) {
+									result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),
+											elem.getInteger("placaid"), elem.getString("nombre"),
+											localDateToDate(elem.getLocalDate("fecha")), elem.getInteger("estado"),elem.getString("tipo"))));
+								}
+								System.out.println(result.toString());
+							} else {
+								System.out.println("Error: " + res.cause().getLocalizedMessage());
+							}
+							connection.result().close();
+						});
+			} else {
+				System.out.println(connection.cause().toString());
 			}
 		});
 	}
