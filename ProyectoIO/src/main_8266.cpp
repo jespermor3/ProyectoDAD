@@ -5,7 +5,7 @@
 int test_delay = 1000; //so we don't spam the API
 boolean describe_tests = true;
 
-RestClient client = RestClient("192.168.181.6", 8084);
+RestClient client = RestClient("192.168.117.42", 8085);
 
 #define STASSID "OPPO A78 5G"
 #define STAPSK  "permor455"
@@ -155,7 +155,7 @@ void GET_tests()
   test_status(client.get("/api/sensores", &response));
   test_response();
 
-  describe("Test GET with path");
+  describe("Test GET with params");
   test_status(client.get("/api/sensores/1", &response));
   test_response();
 }
@@ -242,7 +242,7 @@ void DELETE_tests()
 void loop()
 {
   GET_tests();
-  POST_tests();
+  //POST_tests();
   //PUT_tests();
   //DELETE_tests();
 }
