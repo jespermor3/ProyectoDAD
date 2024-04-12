@@ -49,7 +49,7 @@ public class RestSensor extends AbstractVerticle {
 		router.get("/api/actuadores/:id").handler(this::getByidAc);
 		router.get("/api/actuadores").handler(this::getAllac);
 		router.get("/api/placas").handler(this::getAllpla);
-		router.post("/api/sensores").handler(this::addsen);
+		router.post("/api/sensores/post").handler(this::addsen);
 		router.get("/api/placas/sensores/:idgrupo").handler(this::getAllByidgrupoSensor);
 		router.get("/api/placas/actuadores/:idgrupo").handler(this::getAllByidgrupoActuador);
 
@@ -78,12 +78,11 @@ public class RestSensor extends AbstractVerticle {
 	private void addsen(RoutingContext routingContext) {
 		final Sensor sensor = gson.fromJson(routingContext.getBodyAsString(), Sensor.class);
 		List<Tuple>batch=new ArrayList<>();
-		Tuple a=Tuple.of(sensor.getNombre(),sensor.getFecha().toString(),sensor.getValor().toString(),sensor.getPlacaid().toString());
+		Tuple a=Tuple.of(sensor.getId(),sensor.getPlacaid(),sensor.getNombre(),sensor.getFecha().toString(),sensor.getValor());
 		batch.add(a);
-		mySqlClient.preparedBatch("INSERT INTO proyectodad.sensores(nombre,fecha,valor,placaid) VALUES (?,?,?,?);",batch, res->{
+		mySqlClient.preparedQuery("INSERT INTO proyectodad.sensores(id,placaid,nombre,fecha,valor) VALUES (?,?,?,?,?);", res->{
 			if(res.succeeded()) {
-				RowSet<Row> rows=res.result();
-				System.out.println(rows);
+				System.out.println(a);
 			}else {
 				System.out.println("Batch Failed");
 			}
