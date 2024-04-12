@@ -6,6 +6,7 @@ import java.util.Objects;
 
 public class Actuador {
 	private Integer id;
+	private Integer idestado;
 	private  Integer placaid;
 	private String nombre;
 	private Date fecha;
@@ -16,6 +17,12 @@ public class Actuador {
 	}
 	public void setId(Integer id) {
 		this.id = id;
+	}
+	public Integer getIdestado() {
+		return idestado;
+	}
+	public void setIdestado(Integer idestado) {
+		this.idestado = idestado;
 	}
 	public Integer getPlacaid() {
 		return placaid;
@@ -49,7 +56,7 @@ public class Actuador {
 	}
 	@Override
 	public int hashCode() {
-		return Objects.hash(estado, fecha, id, nombre, placaid, tipo);
+		return Objects.hash(estado, fecha, id, idestado, nombre, placaid, tipo);
 	}
 	@Override
 	public boolean equals(Object obj) {
@@ -61,17 +68,20 @@ public class Actuador {
 			return false;
 		Actuador other = (Actuador) obj;
 		return Objects.equals(estado, other.estado) && Objects.equals(fecha, other.fecha)
-				&& Objects.equals(id, other.id) && Objects.equals(nombre, other.nombre)
-				&& Objects.equals(placaid, other.placaid) && Objects.equals(tipo, other.tipo);
+				&& Objects.equals(id, other.id) && Objects.equals(idestado, other.idestado)
+				&& Objects.equals(nombre, other.nombre) && Objects.equals(placaid, other.placaid)
+				&& Objects.equals(tipo, other.tipo);
 	}
 	@Override
 	public String toString() {
-		return "Actuador [id=" + id + ", placaid=" + placaid + ", nombre=" + nombre + ", fecha=" + fecha + ", estado="
-				+ estado + ", tipo=" + tipo + "]";
+		return "Actuador [id=" + id + ", idestado=" + idestado + ", placaid=" + placaid + ", nombre=" + nombre
+				+ ", fecha=" + fecha + ", estado=" + estado + ", tipo=" + tipo + "]";
 	}
-	public Actuador(Integer id, Integer placaid, String nombre, Date fecha, Integer estado, String tipo) {
+	public Actuador(Integer id, Integer idestado, Integer placaid, String nombre, Date fecha, Integer estado,
+			String tipo) {
 		super();
 		this.id = id;
+		this.idestado = idestado;
 		this.placaid = placaid;
 		this.nombre = nombre;
 		this.fecha = fecha;
