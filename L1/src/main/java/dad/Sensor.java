@@ -12,6 +12,7 @@ public class Sensor {
 	private String nombre;
 	private Date fecha;
 	private Double valor;
+	
 	public Integer getId() {
 		return id;
 	}
@@ -70,6 +71,14 @@ public class Sensor {
 		return "Sensor [id=" + id + ", idvalor=" + idvalor + ", placaid=" + placaid + ", nombre=" + nombre + ", fecha="
 				+ fecha + ", valor=" + valor + "]";
 	}
+	public Sensor(Integer id, Integer placaid, String nombre, Date fecha, Double valor) {
+		super();
+		this.id = id;
+		this.placaid = placaid;
+		this.nombre = nombre;
+		this.fecha = fecha;
+		this.valor = valor;
+	}
 	public Sensor(Integer id, Integer idvalor, Integer placaid, String nombre, Date fecha, Double valor) {
 		super();
 		this.id = id;
@@ -79,6 +88,8 @@ public class Sensor {
 		this.fecha = fecha;
 		this.valor = valor;
 	}
+	
+	
 	
 	
 

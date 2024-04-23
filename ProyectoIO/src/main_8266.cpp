@@ -162,9 +162,9 @@ void GET_tests()
 
 void POST_tests()
 {
-  String post_body = serializeBody(millis(),1, millis(), random(200, 400)/10);
+  String post_body = serializeBody(1,1, millis(), random(200, 400)/10);
   describe("Test POST with path and body and response");
-  test_status(client.post("/api/sensores", post_body.c_str(), &response));
+  test_status(client.post("/api/sensores/post/", post_body.c_str(), &response));
   test_response();
 }
 
@@ -242,7 +242,7 @@ void DELETE_tests()
 void loop()
 {
   GET_tests();
-  //POST_tests();
+  POST_tests();
   //PUT_tests();
   //DELETE_tests();
 }

@@ -6,11 +6,15 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import com.google.gson.Gson;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
@@ -26,6 +30,8 @@ import io.vertx.sqlclient.Tuple;
 public class RestSensor extends AbstractVerticle {
 	
 	private Gson gson;
+	
+	public static Map<Integer, Sensor> sensores=new HashMap<>();
 	
 	MySQLPool mySqlClient;
 	
@@ -51,9 +57,14 @@ public class RestSensor extends AbstractVerticle {
 		router.get("/api/actuadores/:id").handler(this::getByidAc);
 		router.get("/api/actuadores").handler(this::getAllac);
 		router.get("/api/placas").handler(this::getAllpla);
-		router.post("/api/sensores/post").handler(this::addsen);
+		router.post("/api/sensores/post/:id/:placaid/:nombre/:fecha/:valor").handler(this::addsen);
+		router.post("/api/sensores/new").handler(this::addOne);
 		router.get("/api/placas/sensores/:idgrupo").handler(this::getAllByidgrupoSensor);
 		router.get("/api/placas/actuadores/:idgrupo").handler(this::getAllByidgrupoActuador);
+		router.get("/api/sensores/last/:id").handler(this::getLastidsen);
+        router.get("/api/actuadores/last/:id").handler(this::getLastidAc);
+        router.get("/api/placas/sensores/last/:idgrupo").handler(this::getLastByidgrupoSensor);
+        router.get("/api/placas/actuadores/last/:idgrupo").handler(this::getLastByidgrupoActuador);
 
 	}
 	private void getAllsen(RoutingContext routingContext) {
@@ -68,9 +79,13 @@ public class RestSensor extends AbstractVerticle {
 							elem.getString("nombre"), localDateToDate(elem.getLocalDate("fecha")),
 							elem.getDouble("valor"))));
 				}
+				
+				System.out.println(result.toString());
 				routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
 				.end(result.toString());
-				System.out.println(result.toString());
+				System.out.println(routingContext.response().getStatusCode());
+				
+				
 			} else {
 				System.out.println("Error: " + res.cause().getLocalizedMessage());
 			}
@@ -78,17 +93,42 @@ public class RestSensor extends AbstractVerticle {
 	}
 	
 	private void addsen(RoutingContext routingContext) {
-		final Sensor sensor = gson.fromJson(routingContext.getBodyAsString(), Sensor.class);
-		List<Tuple>batch=new ArrayList<>();
-		Tuple a=Tuple.of(sensor.getId(),sensor.getPlacaid(),sensor.getNombre(),sensor.getFecha().toString(),sensor.getValor());
-		batch.add(a);
-		mySqlClient.preparedQuery("INSERT INTO proyectodad.sensores(id,placaid,nombre,fecha,valor) VALUES (?,?,?,?,?);", res->{
-			if(res.succeeded()) {
-				System.out.println(a);
-			}else {
-				System.out.println("Batch Failed");
+		Integer id=Integer.valueOf(routingContext.request().getParam("id"));
+		Integer placa=Integer.valueOf(routingContext.request().getParam("placaid"));
+		String fecha=routingContext.request().getParam("fecha");
+		String nombre=routingContext.request().getParam("nombre");
+		Double valor=Double.valueOf(routingContext.request().getParam("valor"));
+		Tuple sen=Tuple.of(id,placa,nombre,fecha,valor);
+		mySqlClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().query("INSERT INTO sensores(id,placaid,nombre,fecha,valor) VALUES ("+sen.getInteger(0)+","+
+			sen.getInteger(1)+", '"+sen.getString(2)+" ', '"+sen.getString(3)+" ',"+sen.getDouble(4)+");", res->{
+					if(res.succeeded()) {
+						System.out.println(sen);
+					}else {
+						System.out.println(
+						res.cause().getMessage());
+						System.out.println(
+						res.cause().getLocalizedMessage());
+						System.out.println("Failed");
+						
+					}
+				});
+			} else {
+				System.out.println(connection.cause().toString());
 			}
 		});
+		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
+		.end(gson.toJson(sen));
+	}
+	
+	
+	
+	private void addOne(RoutingContext routingContext) {
+		final Sensor sensor = gson.fromJson(routingContext.getBodyAsString(), Sensor.class);
+		sensores.put(sensor.getId(), sensor);
+		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
+				.end(gson.toJson(sensor));
 	}
 	
 	private void getByidsen(RoutingContext routingContext) {
@@ -331,6 +371,148 @@ public class RestSensor extends AbstractVerticle {
 		});
 	}
 	
+	private void getLastidsen(RoutingContext routingContext) {
+		final int par = Integer.parseInt(routingContext.request().getParam("id"));
+		mySqlClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().preparedQuery("SELECT * FROM proyectodad.sensores WHERE fecha = (SELECT MAX(fecha) FROM proyectodad.sensores WHERE placaid = ?);",
+						Tuple.of(par), res -> {
+							if (res.succeeded()) {
+								// Get the result set
+								RowSet<Row> resultSet = res.result();
+								System.out.println(resultSet.size());
+								JsonArray result = new JsonArray();
+								for (Row elem : resultSet) {
+									result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idvalor"),
+											elem.getInteger("placaid"), elem.getString("nombre"),
+											localDateToDate(elem.getLocalDate("fecha")), elem.getDouble("valor"))));
+								}
+								System.out.println(result.toString());
+								routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
+								.end(result.toString());
+							} else {
+								System.out.println("Error: " + res.cause().getLocalizedMessage());
+							}
+							connection.result().close();
+						});
+			} else {
+				System.out.println(connection.cause().toString());
+			}
+		});
+	}
+	
+	private void getLastidAc(RoutingContext routingContext) {
+		final int par = Integer.parseInt(routingContext.request().getParam("id"));
+		mySqlClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().preparedQuery("SELECT * FROM proyectodad.actuadores WHERE fecha = (SELECT MAX(fecha) FROM proyectodad.actuadores WHERE placaid = ?);",
+						Tuple.of(par), res -> {
+							if (res.succeeded()) {
+								// Get the result set
+								RowSet<Row> resultSet = res.result();
+								System.out.println(resultSet.size());
+								JsonArray result = new JsonArray();
+								for (Row elem : resultSet) {
+									result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idestado"),
+											elem.getInteger("placaid"), elem.getString("nombre"),
+											localDateToDate(elem.getLocalDate("fecha")), elem.getInteger("estado"),elem.getString("tipo"))));
+								}
+								System.out.println(result.toString());
+								routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
+								.end(result.toString());
+							} else {
+								System.out.println("Error: " + res.cause().getLocalizedMessage());
+							}
+							connection.result().close();
+						});
+			} else {
+				System.out.println(connection.cause().toString());
+			}
+		});
+	}
+	
+	private void getLastByidgrupoSensor(RoutingContext routingContext) {
+		final int par = Integer.parseInt(routingContext.request().getParam("idgrupo"));
+		mySqlClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().preparedQuery("SELECT id FROM proyectodad.placas WHERE idgrupo = ?",
+						Tuple.of(par), res -> {
+							if (res.succeeded()) {
+								// Get the result set
+								RowSet<Row> resultSet = res.result();
+								JsonArray result = new JsonArray();
+								for (Row elem : resultSet) {
+									connection.result().preparedQuery("SELECT * FROM proyectodad.sensores WHERE fecha = (SELECT MAX(fecha) FROM proyectodad.sensores WHERE placaid = ?);", Tuple.of(elem.getInteger("id")),
+											res1->{
+												if(res1.succeeded()) {
+													RowSet<Row> resultSet1 = res1.result();
+													for(Row elem1:resultSet1) {
+														result.add(JsonObject.mapFrom(new Sensor(elem1.getInteger("id"),elem1.getInteger("idvalor"),
+															elem1.getInteger("placaid"), elem1.getString("nombre"),
+															localDateToDate(elem1.getLocalDate("fecha")), elem1.getDouble("valor"))));
+													}
+													System.out.println(result.toString());
+													routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
+													.end(result.toString());
+												}else {
+													System.out.println("Error: " + res1.cause().getLocalizedMessage());
+												}
+												
+											});
+								}
+								
+							} else {
+								System.out.println("Error: " + res.cause().getLocalizedMessage());
+							}
+							connection.result().close();
+						});
+			} else {
+				System.out.println(connection.cause().toString());
+			}
+		});
+	}
+	
+	private void getLastByidgrupoActuador(RoutingContext routingContext) {
+		final int par = Integer.parseInt(routingContext.request().getParam("idgrupo"));
+		mySqlClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().preparedQuery("SELECT id FROM proyectodad.placas WHERE idgrupo = ?",
+						Tuple.of(par), res -> {
+							if (res.succeeded()) {
+								// Get the result set
+								RowSet<Row> resultSet = res.result();
+								JsonArray result = new JsonArray();
+								for (Row elem : resultSet) {
+									connection.result().preparedQuery("SELECT * FROM proyectodad.actuadores WHERE fecha = (SELECT MAX(fecha) FROM proyectodad.actuadores WHERE placaid = ?);", Tuple.of(elem.getInteger("id")),
+											res1->{
+												if(res1.succeeded()) {
+													RowSet<Row> resultSet1 = res1.result();
+													for(Row elem1:resultSet1) {
+														result.add(JsonObject.mapFrom(new Actuador(elem1.getInteger("id"),elem1.getInteger("idestado"),
+																elem1.getInteger("placaid"), elem1.getString("nombre"),
+																localDateToDate(elem1.getLocalDate("fecha")), elem1.getInteger("estado"),elem1.getString("tipo"))));
+													}
+													System.out.println(result.toString());
+													routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
+													.end(result.toString());
+												}else {
+													System.out.println("Error: " + res1.cause().getLocalizedMessage());
+												}
+												
+											});
+								}
+								
+							} else {
+								System.out.println("Error: " + res.cause().getLocalizedMessage());
+							}
+							connection.result().close();
+						});
+			} else {
+				System.out.println(connection.cause().toString());
+			}
+		});
+	}
+
 	
 	
 	
