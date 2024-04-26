@@ -1,8 +1,12 @@
 package dad;
 
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
 
 public class Sensor {
@@ -10,9 +14,25 @@ public class Sensor {
 	private Integer idvalor;
 	private Integer placaid;
 	private String nombre;
-	private Date fecha;
+	private Long fecha;
 	private Double valor;
-	
+	public Sensor(Integer id, Integer idvalor, Integer placaid, String nombre, Long fecha, Double valor) {
+		super();
+		this.id = id;
+		this.idvalor = idvalor;
+		this.placaid = placaid;
+		this.nombre = nombre;
+		this.fecha = fecha;
+		this.valor = valor;
+	}
+	public Sensor(Integer id, Integer placaid, String nombre, Date fecha, Double valor) {
+		super();
+		this.id = id;
+		this.placaid = placaid;
+		this.nombre = nombre;
+		this.fecha = fecha.getTime();
+		this.valor = valor;
+	}
 	public Integer getId() {
 		return id;
 	}
@@ -37,10 +57,10 @@ public class Sensor {
 	public void setNombre(String nombre) {
 		this.nombre = nombre;
 	}
-	public Date getFecha() {
+	public Long getFecha() {
 		return fecha;
 	}
-	public void setFecha(Date fecha) {
+	public void setFecha(Long fecha) {
 		this.fecha = fecha;
 	}
 	public Double getValor() {
@@ -71,25 +91,6 @@ public class Sensor {
 		return "Sensor [id=" + id + ", idvalor=" + idvalor + ", placaid=" + placaid + ", nombre=" + nombre + ", fecha="
 				+ fecha + ", valor=" + valor + "]";
 	}
-	public Sensor(Integer id, Integer placaid, String nombre, Date fecha, Double valor) {
-		super();
-		this.id = id;
-		this.placaid = placaid;
-		this.nombre = nombre;
-		this.fecha = fecha;
-		this.valor = valor;
-	}
-	public Sensor(Integer id, Integer idvalor, Integer placaid, String nombre, Date fecha, Double valor) {
-		super();
-		this.id = id;
-		this.idvalor = idvalor;
-		this.placaid = placaid;
-		this.nombre = nombre;
-		this.fecha = fecha;
-		this.valor = valor;
-	}
-	
-	
 	
 	
 

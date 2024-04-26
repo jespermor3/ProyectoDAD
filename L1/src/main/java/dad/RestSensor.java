@@ -3,6 +3,7 @@ package dad;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -11,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -19,6 +22,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.mysqlclient.MySQLPool;
 import io.vertx.sqlclient.PoolOptions;
@@ -37,6 +41,7 @@ public class RestSensor extends AbstractVerticle {
 	
 	@Override
 	public void start(Promise<Void> startFuture) {
+		gson =  new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
 		MySQLConnectOptions connectOptions = new MySQLConnectOptions().setPort(3306).setHost("localhost")
 				.setDatabase("proyectodad").setUser("chema").setPassword("chema");
 
@@ -52,6 +57,7 @@ public class RestSensor extends AbstractVerticle {
 
 		mySqlClient = MySQLPool.pool(vertx, connectOptions, poolOptions);
 		
+		router.route("/api/*").handler(BodyHandler.create());
 		router.get("/api/sensores").handler(this::getAllsen);
 		router.get("/api/sensores/:id").handler(this::getByidsen);
 		router.get("/api/actuadores/:id").handler(this::getByidAc);
@@ -76,7 +82,7 @@ public class RestSensor extends AbstractVerticle {
 				JsonArray result = new JsonArray();
 				for (Row elem : resultSet) {
 					result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idvalor"), elem.getInteger("placaid"),
-							elem.getString("nombre"), localDateToDate(elem.getLocalDate("fecha")),
+							elem.getString("nombre"), elem.getLong("fecha"),
 							elem.getDouble("valor"))));
 				}
 				
@@ -125,8 +131,30 @@ public class RestSensor extends AbstractVerticle {
 	
 	
 	private void addOne(RoutingContext routingContext) {
+		System.out.println(routingContext.getBodyAsString());
 		final Sensor sensor = gson.fromJson(routingContext.getBodyAsString(), Sensor.class);
-		sensores.put(sensor.getId(), sensor);
+		
+		System.out.println(sensor);
+		mySqlClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().query("INSERT INTO sensores(id,placaid,nombre,fecha,valor) VALUES ("+sensor.getId()+","+
+			sensor.getPlacaid()+", '"+sensor.getNombre()+" ', '"+sensor.getFecha()
+			+" ',"+sensor.getValor()+");", res->{
+					if(res.succeeded()) {
+						System.out.println(sensor);
+					}else {
+						System.out.println(
+						res.cause().getMessage());
+						System.out.println(
+						res.cause().getLocalizedMessage());
+						System.out.println("Failed");
+						
+					}
+				});
+			} else {
+				System.out.println(connection.cause().toString());
+			}
+		});
 		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
 				.end(gson.toJson(sensor));
 	}
@@ -145,7 +173,7 @@ public class RestSensor extends AbstractVerticle {
 								for (Row elem : resultSet) {
 									result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idvalor"),
 											elem.getInteger("placaid"), elem.getString("nombre"),
-											localDateToDate(elem.getLocalDate("fecha")), elem.getDouble("valor"))));
+											elem.getLong("fecha"), elem.getDouble("valor"))));
 								}
 								System.out.println(result.toString());
 								routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
@@ -175,7 +203,7 @@ public class RestSensor extends AbstractVerticle {
 								for (Row elem : resultSet) {
 									result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idestado"),
 											elem.getInteger("placaid"), elem.getString("nombre"),
-											localDateToDate(elem.getLocalDate("fecha")), elem.getInteger("estado"),elem.getString("tipo"))));
+											elem.getLong("fecha"), elem.getInteger("estado"),elem.getString("tipo"))));
 								}
 								System.out.println(result.toString());
 								routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
@@ -267,7 +295,7 @@ public class RestSensor extends AbstractVerticle {
 													for(Row elem1:resultSet1) {
 														result.add(JsonObject.mapFrom(new Sensor(elem1.getInteger("id"),elem1.getInteger("idvalor"),
 															elem1.getInteger("placaid"), elem1.getString("nombre"),
-															localDateToDate(elem1.getLocalDate("fecha")), elem1.getDouble("valor"))));
+															elem1.getLong("fecha"), elem1.getDouble("valor"))));
 													}
 													System.out.println(result.toString());
 													routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
@@ -308,7 +336,7 @@ public class RestSensor extends AbstractVerticle {
 													for(Row elem1:resultSet1) {
 														result.add(JsonObject.mapFrom(new Actuador(elem1.getInteger("id"),elem1.getInteger("idestado"),
 																elem1.getInteger("placaid"), elem1.getString("nombre"),
-																localDateToDate(elem1.getLocalDate("fecha")), elem1.getInteger("estado"),elem1.getString("tipo"))));
+																elem1.getLong("fecha"), elem1.getInteger("estado"),elem1.getString("tipo"))));
 													}
 													System.out.println(result.toString());
 													routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
@@ -340,7 +368,7 @@ public class RestSensor extends AbstractVerticle {
 				JsonArray result = new JsonArray();
 				for (Row elem : resultSet) {
 					result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idestado"), elem.getInteger("placaid"),
-							elem.getString("nombre"), localDateToDate(elem.getLocalDate("fecha")),
+							elem.getString("nombre"), elem.getLong("fecha"),
 							elem.getInteger("estado"),elem.getString("tipo"))));
 				}
 				System.out.println(result.toString());
@@ -385,7 +413,7 @@ public class RestSensor extends AbstractVerticle {
 								for (Row elem : resultSet) {
 									result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idvalor"),
 											elem.getInteger("placaid"), elem.getString("nombre"),
-											localDateToDate(elem.getLocalDate("fecha")), elem.getDouble("valor"))));
+											elem.getLong("fecha"), elem.getDouble("valor"))));
 								}
 								System.out.println(result.toString());
 								routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
@@ -415,7 +443,7 @@ public class RestSensor extends AbstractVerticle {
 								for (Row elem : resultSet) {
 									result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idestado"),
 											elem.getInteger("placaid"), elem.getString("nombre"),
-											localDateToDate(elem.getLocalDate("fecha")), elem.getInteger("estado"),elem.getString("tipo"))));
+											elem.getLong("fecha"), elem.getInteger("estado"),elem.getString("tipo"))));
 								}
 								System.out.println(result.toString());
 								routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
@@ -449,7 +477,7 @@ public class RestSensor extends AbstractVerticle {
 													for(Row elem1:resultSet1) {
 														result.add(JsonObject.mapFrom(new Sensor(elem1.getInteger("id"),elem1.getInteger("idvalor"),
 															elem1.getInteger("placaid"), elem1.getString("nombre"),
-															localDateToDate(elem1.getLocalDate("fecha")), elem1.getDouble("valor"))));
+															elem1.getLong("fecha"), elem1.getDouble("valor"))));
 													}
 													System.out.println(result.toString());
 													routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
@@ -490,7 +518,7 @@ public class RestSensor extends AbstractVerticle {
 													for(Row elem1:resultSet1) {
 														result.add(JsonObject.mapFrom(new Actuador(elem1.getInteger("id"),elem1.getInteger("idestado"),
 																elem1.getInteger("placaid"), elem1.getString("nombre"),
-																localDateToDate(elem1.getLocalDate("fecha")), elem1.getInteger("estado"),elem1.getString("tipo"))));
+																elem1.getLong("fecha"), elem1.getInteger("estado"),elem1.getString("tipo"))));
 													}
 													System.out.println(result.toString());
 													routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)

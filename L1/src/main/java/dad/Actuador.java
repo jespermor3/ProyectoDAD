@@ -9,49 +9,18 @@ public class Actuador {
 	private Integer idestado;
 	private  Integer placaid;
 	private String nombre;
-	private Date fecha;
+	private Long fecha;
 	private Integer estado;
 	private String tipo;
-	public Integer getId() {
-		return id;
-	}
-	public void setId(Integer id) {
+	public Actuador(Integer id, Integer idestado, Integer placaid, String nombre, Long fecha, Integer estado,
+			String tipo) {
+		super();
 		this.id = id;
-	}
-	public Integer getIdestado() {
-		return idestado;
-	}
-	public void setIdestado(Integer idestado) {
 		this.idestado = idestado;
-	}
-	public Integer getPlacaid() {
-		return placaid;
-	}
-	public void setPlacaid(Integer placaid) {
 		this.placaid = placaid;
-	}
-	public String getNombre() {
-		return nombre;
-	}
-	public void setNombre(String nombre) {
 		this.nombre = nombre;
-	}
-	public Date getFecha() {
-		return fecha;
-	}
-	public void setFecha(Date fecha) {
 		this.fecha = fecha;
-	}
-	public Integer getEstado() {
-		return estado;
-	}
-	public void setEstado(Integer estado) {
 		this.estado = estado;
-	}
-	public String getTipo() {
-		return tipo;
-	}
-	public void setTipo(String tipo) {
 		this.tipo = tipo;
 	}
 	@Override
@@ -77,18 +46,48 @@ public class Actuador {
 		return "Actuador [id=" + id + ", idestado=" + idestado + ", placaid=" + placaid + ", nombre=" + nombre
 				+ ", fecha=" + fecha + ", estado=" + estado + ", tipo=" + tipo + "]";
 	}
-	public Actuador(Integer id, Integer idestado, Integer placaid, String nombre, Date fecha, Integer estado,
-			String tipo) {
-		super();
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
 		this.id = id;
+	}
+	public Integer getIdestado() {
+		return idestado;
+	}
+	public void setIdestado(Integer idestado) {
 		this.idestado = idestado;
+	}
+	public Integer getPlacaid() {
+		return placaid;
+	}
+	public void setPlacaid(Integer placaid) {
 		this.placaid = placaid;
+	}
+	public String getNombre() {
+		return nombre;
+	}
+	public void setNombre(String nombre) {
 		this.nombre = nombre;
+	}
+	public Long getFecha() {
+		return fecha;
+	}
+	public void setFecha(Long fecha) {
 		this.fecha = fecha;
+	}
+	public Integer getEstado() {
+		return estado;
+	}
+	public void setEstado(Integer estado) {
 		this.estado = estado;
+	}
+	public String getTipo() {
+		return tipo;
+	}
+	public void setTipo(String tipo) {
 		this.tipo = tipo;
 	}
-	
 	
 	
 

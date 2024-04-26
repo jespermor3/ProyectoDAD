@@ -12,7 +12,7 @@ create or replace table sensores(
     idvalor INT KEY AUTO_INCREMENT,
 	 placaid INT, 
     nombre VARCHAR(40) NOT NULL,
-    fecha DATE,
+    fecha LONG,
     valor DOUBLE,
     FOREIGN KEY(placaid) REFERENCES placas(id)
 );
@@ -22,7 +22,7 @@ create or replace table actuadores(
     idestado INT KEY AUTO_INCREMENT,
     placaid INT,
     nombre VARCHAR(40) NOT NULL,
-    fecha DATE,
+    fecha LONG,
     estado INT, 
     tipo ENUM('rele','led') NOT NULL,
     Foreign key(placaid) references placas(id)
