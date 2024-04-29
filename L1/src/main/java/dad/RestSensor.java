@@ -65,6 +65,7 @@ public class RestSensor extends AbstractVerticle {
 		router.get("/api/placas").handler(this::getAllpla);
 		router.post("/api/sensores/new").handler(this::addOneSen);
 		router.post("/api/actuadores/new").handler(this::addOneAct);
+		router.post("/api/placas/new").handler(this::addOnePla);
 		router.get("/api/placas/sensores/:idgrupo").handler(this::getAllByidgrupoSensor);
 		router.get("/api/placas/actuadores/:idgrupo").handler(this::getAllByidgrupoActuador);
 		router.get("/api/sensores/last/:id").handler(this::getLastidsen);
@@ -137,6 +138,31 @@ public class RestSensor extends AbstractVerticle {
 				connection.result().query("INSERT INTO sensores(id,placaid,nombre,fecha,valor) VALUES ("+sensor.getId()+","+
 			sensor.getPlacaid()+", '"+sensor.getNombre()+" ', '"+sensor.getFecha()
 			+" ',"+sensor.getValor()+");", res->{
+					if(res.succeeded()) {
+						System.out.println(sensor);
+					}else {
+						System.out.println(
+						res.cause().getMessage());
+						System.out.println(
+						res.cause().getLocalizedMessage());
+						System.out.println("Failed");
+						
+					}
+				});
+			} else {
+				System.out.println(connection.cause().toString());
+			}
+		});
+		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
+				.end(gson.toJson(sensor));
+	}
+	
+	private void addOnePla(RoutingContext routingContext) {
+		final Placa sensor = gson.fromJson(routingContext.getBodyAsString(), Placa.class);
+		mySqlClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().query("INSERT INTO placa(id,placaid,nombre,fecha,valor) VALUES "
+						+ "("+sensor.getId()+","+sensor.getNombre()+");", res->{
 					if(res.succeeded()) {
 						System.out.println(sensor);
 					}else {
