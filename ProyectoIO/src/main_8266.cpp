@@ -1,14 +1,56 @@
 #include "RestClient.h"
 #include "ArduinoJson.h"
 #include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+#include <ESP8266HTTPClient.h>
 
-int test_delay = 1000; //so we don't spam the API
+int test_delay = 5000; //so we don't spam the API
 boolean describe_tests = true;
 
-RestClient client = RestClient("192.168.117.42", 8085);
+RestClient client = RestClient("192.168.237.42", 8085);
+
+String serverName = "http://192.168.1.178/";
+HTTPClient http;
 
 #define STASSID "OPPO A78 5G"
 #define STAPSK  "permor455"
+
+// MQTT configuration
+WiFiClient espClient;
+PubSubClient client2(espClient);
+
+
+// Server IP, where de MQTT broker is deployed
+const char *MQTT_BROKER_ADRESS = "192.168.1.154";
+const uint16_t MQTT_PORT = 1883;
+
+// Name for this MQTT client
+const char *MQTT_CLIENT_NAME = "ArduinoClient_1";
+
+// callback a ejecutar cuando se recibe un mensaje
+// en este ejemplo, muestra por serial el mensaje recibido
+void OnMqttReceived(char *topic, byte *payload, unsigned int length)
+{
+  Serial.print("Received on ");
+  Serial.print(topic);
+  Serial.print(": ");
+
+  String content = "";
+  for (size_t i = 0; i < length; i++)
+  {
+    content.concat((char)payload[i]);
+  }
+  Serial.print(content);
+  Serial.println();
+}
+
+// inicia la comunicacion MQTT
+// inicia establece el servidor y el callback al recibir un mensaje
+void InitMqtt()
+{
+  client2.setServer(MQTT_BROKER_ADRESS, MQTT_PORT);
+  client2.setCallback(OnMqttReceived);
+}
 
 //Setup
 void setup()
@@ -38,7 +80,7 @@ void setup()
 
 String response;
 
-String serializeBody(int idSensor, int placaid, long time, double val)
+String serializeBody(int idSensor, int placaid,String nombre, long time, double val)
 {
   StaticJsonDocument<200> doc;
 
@@ -51,6 +93,7 @@ String serializeBody(int idSensor, int placaid, long time, double val)
   //
   doc["id"] = idSensor;
   doc["placaid"] = placaid;
+  doc["nombre"] = nombre;
   doc["fecha"] = time;
 
   // Add an array.
@@ -65,7 +108,7 @@ String serializeBody(int idSensor, int placaid, long time, double val)
   // {"sensor":"gps","time":1351824120,"data":[48.756080,2.302038]}
 
   // Start a new line
-  Serial.println(output);
+  //Serial.println(output);
 
   // Generate the prettified JSON and send it to the Serial port.
   //
@@ -162,9 +205,9 @@ void GET_tests()
 
 void POST_tests()
 {
-  String post_body = serializeBody(1,1, millis(), random(200, 400)/10);
+  String post_body = serializeBody(1,1,"sen1", millis(), random(200, 400)/10);
   describe("Test POST with path and body and response");
-  test_status(client.post("/api/sensores/post/", post_body.c_str(), &response));
+  test_status(client.post("/api/sensores/new", post_body.c_str(), &response));
   test_response();
 }
 
@@ -242,7 +285,6 @@ void DELETE_tests()
 void loop()
 {
   GET_tests();
-  POST_tests();
-  //PUT_tests();
-  //DELETE_tests();
+  //POST_tests();
+  InitMqtt();
 }

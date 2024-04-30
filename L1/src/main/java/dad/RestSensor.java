@@ -1,28 +1,26 @@
 package dad;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.file.FileSystemOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.mqtt.MqttClient;
+import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.mysqlclient.MySQLPool;
 import io.vertx.sqlclient.PoolOptions;
@@ -44,6 +42,23 @@ public class RestSensor extends AbstractVerticle {
 		gson =  new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
 		MySQLConnectOptions connectOptions = new MySQLConnectOptions().setPort(3306).setHost("localhost")
 				.setDatabase("proyectodad").setUser("chema").setPassword("chema");
+		MqttClient mqttClient = MqttClient.create(vertx, new MqttClientOptions().setAutoKeepAlive(true));
+		mqttClient.connect(1883, "localhost", s -> {
+
+			mqttClient.subscribe("topic_2", MqttQoS.AT_LEAST_ONCE.value(), handler -> {
+				if (handler.succeeded()) {
+					System.out.println("Suscripción " + mqttClient.clientId());
+				}
+			});
+
+			mqttClient.publishHandler(handler -> {
+				System.out.println("Mensaje recibido:");
+				System.out.println("    Topic: " + handler.topicName().toString());
+				System.out.println("    Id del mensaje: " + handler.messageId());
+				System.out.println("    Contenido: " + handler.payload().toString());
+			});
+			mqttClient.publish("topic_1", Buffer.buffer("Ejemplo"), MqttQoS.AT_LEAST_ONCE, false, false);
+		});
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
 		Router router = Router.router(vertx);
@@ -78,8 +93,8 @@ public class RestSensor extends AbstractVerticle {
 		mySqlClient.query("SELECT * FROM proyectodad.sensores;", res -> {
 			if (res.succeeded()) {
 				// Get the result set
+				routingContext.response().setStatusCode(200);
 				RowSet<Row> resultSet = res.result();
-				System.out.println(resultSet.size());
 				JsonArray result = new JsonArray();
 				for (Row elem : resultSet) {
 					result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idvalor"), elem.getInteger("placaid"),
@@ -97,36 +112,6 @@ public class RestSensor extends AbstractVerticle {
 				System.out.println("Error: " + res.cause().getLocalizedMessage());
 			}
 		});
-	}
-	
-	private void addsen(RoutingContext routingContext) {
-		Integer id=Integer.valueOf(routingContext.request().getParam("id"));
-		Integer placa=Integer.valueOf(routingContext.request().getParam("placaid"));
-		String fecha=routingContext.request().getParam("fecha");
-		String nombre=routingContext.request().getParam("nombre");
-		Double valor=Double.valueOf(routingContext.request().getParam("valor"));
-		Tuple sen=Tuple.of(id,placa,nombre,fecha,valor);
-		mySqlClient.getConnection(connection -> {
-			if (connection.succeeded()) {
-				connection.result().query("INSERT INTO sensores(id,placaid,nombre,fecha,valor) VALUES ("+sen.getInteger(0)+","+
-			sen.getInteger(1)+", '"+sen.getString(2)+" ', '"+sen.getString(3)+" ',"+sen.getDouble(4)+");", res->{
-					if(res.succeeded()) {
-						System.out.println(sen);
-					}else {
-						System.out.println(
-						res.cause().getMessage());
-						System.out.println(
-						res.cause().getLocalizedMessage());
-						System.out.println("Failed");
-						
-					}
-				});
-			} else {
-				System.out.println(connection.cause().toString());
-			}
-		});
-		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
-		.end(gson.toJson(sen));
 	}
 	
 	
@@ -217,7 +202,6 @@ public class RestSensor extends AbstractVerticle {
 							if (res.succeeded()) {
 								// Get the result set
 								RowSet<Row> resultSet = res.result();
-								System.out.println(resultSet.size());
 								JsonArray result = new JsonArray();
 								for (Row elem : resultSet) {
 									result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idvalor"),
