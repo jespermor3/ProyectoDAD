@@ -171,9 +171,9 @@ public class RestSensor extends AbstractVerticle {
 		final Actuador sensor = gson.fromJson(routingContext.getBodyAsString(), Actuador.class);
 		mySqlClient.getConnection(connection -> {
 			if (connection.succeeded()) {
-				connection.result().query("INSERT INTO actuadores(id,placacid,nombre,fecha,estado,tipo) VALUES ("+sensor.getId()+","+
+				connection.result().query("INSERT INTO actuadores(id,placaid,nombre,fecha,estado,tipo) VALUES ("+sensor.getId()+","+
 			sensor.getPlacaid()+", '"+sensor.getNombre()+" ', '"+sensor.getFecha()
-			+" ',"+sensor.getEstado()+","+sensor.getTipo()+");", res->{
+			+" ',"+sensor.getEstado()+", '"+sensor.getTipo()+"');", res->{
 					if(res.succeeded()) {
 						System.out.println(sensor);
 					}else {

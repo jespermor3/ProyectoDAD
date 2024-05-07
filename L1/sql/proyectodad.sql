@@ -12,7 +12,7 @@ create or replace table sensores(
     idvalor INT KEY AUTO_INCREMENT,
 	 placaid INT, 
     nombre VARCHAR(40) NOT NULL,
-    fecha LONG,
+    fecha BIGINT DEFAULT UNIX_TIMESTAMP(),
     valor DOUBLE,
     FOREIGN KEY(placaid) REFERENCES placas(id)
 );
@@ -22,15 +22,15 @@ create or replace table actuadores(
     idestado INT KEY AUTO_INCREMENT,
     placaid INT,
     nombre VARCHAR(40) NOT NULL,
-    fecha LONG,
+    fecha BIGINT DEFAULT UNIX_TIMESTAMP(),
     estado INT, 
-    tipo ENUM('rele','led') NOT NULL,
+    tipo VARCHAR(40) NOT NULL,
     Foreign key(placaid) references placas(id)
 );
 
 INSERT INTO placas(idgrupo,nombre) VALUES (1,'placa1');
 
-INSERT INTO sensores(id,placaid,nombre,fecha,valor) VALUES 
-(1,1,'sen1','2023-02-20',30.0);
+INSERT INTO sensores(id,placaid,nombre,valor) VALUES 
+(1,1,'sen1',30.0);
 
-INSERT INTO actuadores(id,placaid,nombre,fecha,estado,tipo) VALUES(1,1,'act1', '2023-02-20',1,'led');
+INSERT INTO actuadores(id,placaid,nombre,estado,tipo) VALUES(1,1,'act1', 1,'led');

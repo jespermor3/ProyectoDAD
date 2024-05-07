@@ -9,7 +9,7 @@ boolean describe_tests = true;
 
 RestClient client = RestClient("192.168.237.42", 8085);
 
-String serverName = "http://192.168.1.178/";
+String serverName = "http://localhost/";
 HTTPClient http;
 
 #define STASSID "OPPO A78 5G"
@@ -49,6 +49,8 @@ void OnMqttReceived(char *topic, byte *payload, unsigned int length)
 void InitMqtt()
 {
   client2.setServer(MQTT_BROKER_ADRESS, MQTT_PORT);
+  client2.subscribe("topic_1");
+  client2.publish("topic_1","bbiwbv");
   client2.setCallback(OnMqttReceived);
 }
 
@@ -80,7 +82,7 @@ void setup()
 
 String response;
 
-String serializeBody(int idSensor, int placaid,String nombre, long time, double val)
+String serializeBodySen(int idSensor, int placaid,String nombre, long time, double val)
 {
   StaticJsonDocument<200> doc;
 
@@ -122,6 +124,34 @@ String serializeBody(int idSensor, int placaid,String nombre, long time, double 
   //     2.302038
   //   ]
   // }
+  return output;
+}
+
+String serializeBodyAct(int idSensor, int placaid,String nombre, long time, int estado,String tipo)
+{
+  StaticJsonDocument<200> doc;
+
+  // StaticJsonObject allocates memory on the stack, it can be
+  // replaced by DynamicJsonDocument which allocates in the heap.
+  //
+  // DynamicJsonDocument  doc(200);
+
+  // Add values in the document
+  //
+  doc["id"] = idSensor;
+  doc["placaid"] = placaid;
+  doc["nombre"] = nombre;
+  doc["fecha"] = time;
+
+  // Add an array.
+  //
+  doc["estado"]=estado;
+  doc["tipo"]=tipo;
+
+  // Generate the minified JSON and send it to the Serial port.
+  //
+  String output;
+  serializeJson(doc, output);
   return output;
 }
 
@@ -195,7 +225,7 @@ void GET_tests()
   test_response();
 
   describe("Test GET with path and response");
-  test_status(client.get("/api/sensores", &response));
+  test_status(client.get("/api/placas/sensores/last/1", &response));
   test_response();
 
   describe("Test GET with params");
@@ -203,11 +233,19 @@ void GET_tests()
   test_response();
 }
 
-void POST_tests()
+void POST_tests_sen()
 {
-  String post_body = serializeBody(1,1,"sen1", millis(), random(200, 400)/10);
+  String post_body = serializeBodySen(1,1,"sen1", millis(), random(200, 400)/10);
   describe("Test POST with path and body and response");
   test_status(client.post("/api/sensores/new", post_body.c_str(), &response));
+  test_response();
+}
+
+void POST_tests_Act()
+{
+  String post_body = serializeBodyAct(1,1,"act3", millis(),1, "led");
+  describe("Test POST with path and body and response");
+  test_status(client.post("/api/actuadores/new", post_body.c_str(), &response));
   test_response();
 }
 
@@ -285,6 +323,6 @@ void DELETE_tests()
 void loop()
 {
   GET_tests();
-  //POST_tests();
+  POST_tests_Act();
   InitMqtt();
 }
