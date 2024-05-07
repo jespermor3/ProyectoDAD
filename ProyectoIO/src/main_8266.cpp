@@ -50,7 +50,6 @@ void InitMqtt()
 {
   client2.setServer(MQTT_BROKER_ADRESS, MQTT_PORT);
   client2.subscribe("topic_1");
-  client2.publish("topic_1","bbiwbv");
   client2.setCallback(OnMqttReceived);
 }
 
@@ -82,7 +81,7 @@ void setup()
 
 String response;
 
-String serializeBodySen(int idSensor, int placaid,String nombre, long time, double val)
+String serializeBodySen(int idSensor, int placaid,String nombre, double val)
 {
   StaticJsonDocument<200> doc;
 
@@ -96,8 +95,6 @@ String serializeBodySen(int idSensor, int placaid,String nombre, long time, doub
   doc["id"] = idSensor;
   doc["placaid"] = placaid;
   doc["nombre"] = nombre;
-  doc["fecha"] = time;
-
   // Add an array.
   //
   doc["valor"]=val;
@@ -127,7 +124,7 @@ String serializeBodySen(int idSensor, int placaid,String nombre, long time, doub
   return output;
 }
 
-String serializeBodyAct(int idSensor, int placaid,String nombre, long time, int estado,String tipo)
+String serializeBodyAct(int idSensor, int placaid,String nombre, int estado,String tipo)
 {
   StaticJsonDocument<200> doc;
 
@@ -141,7 +138,6 @@ String serializeBodyAct(int idSensor, int placaid,String nombre, long time, int 
   doc["id"] = idSensor;
   doc["placaid"] = placaid;
   doc["nombre"] = nombre;
-  doc["fecha"] = time;
 
   // Add an array.
   //
@@ -235,7 +231,7 @@ void GET_tests()
 
 void POST_tests_sen()
 {
-  String post_body = serializeBodySen(1,1,"sen1", millis(), random(200, 400)/10);
+  String post_body = serializeBodySen(1,1,"sen1", random(200, 400)/10);
   describe("Test POST with path and body and response");
   test_status(client.post("/api/sensores/new", post_body.c_str(), &response));
   test_response();
@@ -243,86 +239,17 @@ void POST_tests_sen()
 
 void POST_tests_Act()
 {
-  String post_body = serializeBodyAct(1,1,"act3", millis(),1, "led");
+  String post_body = serializeBodyAct(1,1,"act3",1, "led");
   describe("Test POST with path and body and response");
   test_status(client.post("/api/actuadores/new", post_body.c_str(), &response));
   test_response();
 }
 
-void PUT_tests()
-{
-  int temp = 38;
-  long timestamp = 151241254122;
-  // POST TESTS
-  String post_body = "{ 'id' : 18, 'value': " + temp;
-  post_body = post_body + " , 'timestamp' :";
-  post_body = post_body + timestamp;
-  post_body = post_body + ", 'user' : 'Luismi'}";
-
-  describe("Test PUT with path and body");
-  test_status(client.put("/data/445654", post_body.c_str()));
-
-  describe("Test PUT with path and body and response");
-  test_status(client.put("/data/1241231", post_body.c_str(), &response));
-  test_response();
-
-  describe("Test PUT with path and body and header");
-  client.setHeader("X-Test-Header: true");
-  test_status(client.put("/data-header/1241231", post_body.c_str()));
-
-  describe("Test PUT with path and body and header and response");
-  client.setHeader("X-Test-Header: true");
-  test_status(client.put("/data-header/1241231", post_body.c_str(), &response));
-  test_response();
-
-  describe("Test PUT with 2 headers and response");
-  client.setHeader("X-Test-Header1: one");
-  client.setHeader("X-Test-Header2: two");
-  test_status(client.put("/data-headers/1241231", post_body.c_str(), &response));
-  test_response();
-}
-
-void DELETE_tests()
-{
-  int temp = 37;
-  long timestamp = 151241254122;
-  // POST TESTS
-  String post_body = "{ 'idsensor' : 18, 'value': " + temp;
-  post_body = post_body + " , 'timestamp' :";
-  post_body = post_body + timestamp;
-  post_body = post_body + ", 'user' : 'Luismi'}";
-
-  describe("Test DELETE with path");
-  //note: requires a special endpoint
-  test_status(client.del("/del/1241231"));
-
-  describe("Test DELETE with path and body");
-  test_status(client.del("/data/1241231", post_body.c_str()));
-
-  describe("Test DELETE with path and body and response");
-  test_status(client.del("/data", post_body.c_str(), &response));
-  test_response();
-
-  describe("Test DELETE with path and body and header");
-  client.setHeader("X-Test-Header: true");
-  test_status(client.del("/data-header", post_body.c_str()));
-
-  describe("Test DELETE with path and body and header and response");
-  client.setHeader("X-Test-Header: true");
-  test_status(client.del("/data-header", post_body.c_str(), &response));
-  test_response();
-
-  describe("Test DELETE with 2 headers and response");
-  client.setHeader("X-Test-Header1: one");
-  client.setHeader("X-Test-Header2: two");
-  test_status(client.del("/data-headers", post_body.c_str(), &response));
-  test_response();
-}
 
 // Run the tests!
 void loop()
 {
   GET_tests();
-  POST_tests_Act();
+  POST_tests_sen();
   InitMqtt();
 }

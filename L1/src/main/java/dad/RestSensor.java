@@ -120,9 +120,8 @@ public class RestSensor extends AbstractVerticle {
 		final Sensor sensor = gson.fromJson(routingContext.getBodyAsString(), Sensor.class);
 		mySqlClient.getConnection(connection -> {
 			if (connection.succeeded()) {
-				connection.result().query("INSERT INTO sensores(id,placaid,nombre,fecha,valor) VALUES ("+sensor.getId()+","+
-			sensor.getPlacaid()+", '"+sensor.getNombre()+" ', '"+sensor.getFecha()
-			+" ',"+sensor.getValor()+");", res->{
+				connection.result().query("INSERT INTO sensores(id,placaid,nombre,valor) VALUES ("+sensor.getId()+","+
+			sensor.getPlacaid()+", '"+sensor.getNombre()+"' ,"+sensor.getValor()+");", res->{
 					if(res.succeeded()) {
 						System.out.println(sensor);
 					}else {
@@ -171,9 +170,8 @@ public class RestSensor extends AbstractVerticle {
 		final Actuador sensor = gson.fromJson(routingContext.getBodyAsString(), Actuador.class);
 		mySqlClient.getConnection(connection -> {
 			if (connection.succeeded()) {
-				connection.result().query("INSERT INTO actuadores(id,placaid,nombre,fecha,estado,tipo) VALUES ("+sensor.getId()+","+
-			sensor.getPlacaid()+", '"+sensor.getNombre()+" ', '"+sensor.getFecha()
-			+" ',"+sensor.getEstado()+", '"+sensor.getTipo()+"');", res->{
+				connection.result().query("INSERT INTO actuadores(id,placaid,nombre,estado,tipo) VALUES ("+sensor.getId()+","+
+			sensor.getPlacaid()+", '"+sensor.getNombre()+" ',"+sensor.getEstado()+", '"+sensor.getTipo()+"');", res->{
 					if(res.succeeded()) {
 						System.out.println(sensor);
 					}else {
