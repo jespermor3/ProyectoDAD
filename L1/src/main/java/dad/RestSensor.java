@@ -22,6 +22,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
+import io.vertx.mysqlclient.MySQLClient;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.mysqlclient.MySQLPool;
 import io.vertx.sqlclient.PoolOptions;
@@ -62,7 +63,7 @@ public class RestSensor extends AbstractVerticle {
 			mqttClient.publish("topic_1", Buffer.buffer("Ejemplo"), MqttQoS.AT_LEAST_ONCE, false, false);
 		});
 
-		PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
+		PoolOptions poolOptions = new PoolOptions().setMaxSize(2);
 		Router router = Router.router(vertx);
 		vertx.createHttpServer().requestHandler(router::handle).listen(8085, result -> {
 			if (result.succeeded()) {
@@ -139,6 +140,7 @@ public class RestSensor extends AbstractVerticle {
 						System.out.println("Failed");
 						
 					}
+					connection.result().close();
 				});
 			} else {
 				routingContext.response().setStatusCode(0).putHeader("content-type", "application/json; charset=utf-8")
@@ -146,7 +148,6 @@ public class RestSensor extends AbstractVerticle {
 				System.out.println(connection.cause().toString());
 			}
 		});
-		
 	}
 	
 	private void addOnePla(RoutingContext routingContext) {
@@ -165,6 +166,7 @@ public class RestSensor extends AbstractVerticle {
 						System.out.println("Failed");
 						
 					}
+					connection.result().close();
 				});
 			} else {
 				System.out.println(connection.cause().toString());
@@ -190,6 +192,7 @@ public class RestSensor extends AbstractVerticle {
 						System.out.println("Failed");
 						
 					}
+					connection.result().close();
 				});
 			} else {
 				System.out.println(connection.cause().toString());
