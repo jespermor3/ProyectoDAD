@@ -14,6 +14,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
@@ -36,6 +37,7 @@ public class RestSensor extends AbstractVerticle {
 	public static Map<Integer, Sensor> sensores=new HashMap<>();
 	
 	MySQLPool mySqlClient;
+	//MqttClient mqttClient;
 	
 	@Override
 	public void start(Promise<Void> startFuture) {
@@ -124,7 +126,12 @@ public class RestSensor extends AbstractVerticle {
 			sensor.getPlacaid()+", '"+sensor.getNombre()+"' ,"+sensor.getValor()+");", res->{
 					if(res.succeeded()) {
 						System.out.println(sensor);
+						routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
+						.end(gson.toJson(sensor));
+						
 					}else {
+						routingContext.response().setStatusCode(0).putHeader("content-type", "application/json; charset=utf-8")
+						.end(gson.toJson(sensor));
 						System.out.println(
 						res.cause().getMessage());
 						System.out.println(
@@ -134,11 +141,12 @@ public class RestSensor extends AbstractVerticle {
 					}
 				});
 			} else {
+				routingContext.response().setStatusCode(0).putHeader("content-type", "application/json; charset=utf-8")
+				.end(gson.toJson(sensor));
 				System.out.println(connection.cause().toString());
 			}
 		});
-		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
-				.end(gson.toJson(sensor));
+		
 	}
 	
 	private void addOnePla(RoutingContext routingContext) {

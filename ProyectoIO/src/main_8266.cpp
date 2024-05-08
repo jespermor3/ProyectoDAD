@@ -21,7 +21,7 @@ PubSubClient client2(espClient);
 
 
 // Server IP, where de MQTT broker is deployed
-const char *MQTT_BROKER_ADRESS = "192.168.1.154";
+const char *MQTT_BROKER_ADRESS = "192.168.237.42";
 const uint16_t MQTT_PORT = 1883;
 
 // Name for this MQTT client
@@ -250,6 +250,6 @@ void POST_tests_Act()
 void loop()
 {
   GET_tests();
-  POST_tests_sen();
+  //POST_tests_sen();
   InitMqtt();
 }
