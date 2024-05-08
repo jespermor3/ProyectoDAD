@@ -3,6 +3,16 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <ESP8266HTTPClient.h>
+#include <MQUnifiedsensor.h>
+#define type "MQ135"
+#define placa "ARD"
+#define Voltaje_Resolution 5
+#define ADC_Bit_Resolution 8
+#define pin D8
+
+
+
+MQUnifiedsensor MQ135(placa, Voltaje_Resolution, ADC_Bit_Resolution, pin, type);
 
 int test_delay = 5000; //so we don't spam the API
 boolean describe_tests = true;
@@ -18,7 +28,8 @@ HTTPClient http;
 // MQTT configuration
 WiFiClient espClient;
 PubSubClient client2(espClient);
-
+long lastMsg = 0;
+char msg[50];
 
 // Server IP, where de MQTT broker is deployed
 const char *MQTT_BROKER_ADRESS = "192.168.237.42";
@@ -49,7 +60,6 @@ void OnMqttReceived(char *topic, byte *payload, unsigned int length)
 void InitMqtt()
 {
   client2.setServer(MQTT_BROKER_ADRESS, MQTT_PORT);
-  client2.subscribe("topic_1");
   client2.setCallback(OnMqttReceived);
 }
 
@@ -61,6 +71,7 @@ void setup()
   Serial.print("Connecting to ");
   Serial.println(STASSID);
 
+  MQ135.init();
   /* Explicitly set the ESP8266 to be a WiFi-client, otherwise, it by default,
      would try to act as both a client and an access-point and could cause
      network-issues with your other WiFi-devices on your WiFi-network. */
@@ -245,10 +256,37 @@ void POST_tests_Act()
   test_response();
 }
 
-
+void reconnect() {
+  while (!client2.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    if (client2.connect("ESP8266Client")) {
+      Serial.println("connected");
+      client2.publish("topic_1", "Enviando el primer mensaje");
+      client2.subscribe("topic_1");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client2.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}
 // Run the tests!
 void loop()
 {
+  if (!client2.connected()) {
+  reconnect();
+}
+client2.loop();
+ 
+long now = millis();
+if (now - lastMsg > 2000) {
+  lastMsg = now;
+  Serial.print("Publish message: ");
+  Serial.println(msg);
+  client2.publish("api/sensores", msg);
+}
+  
   GET_tests();
   //POST_tests_sen();
   InitMqtt();
