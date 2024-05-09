@@ -5,10 +5,13 @@
 #include <ESP8266HTTPClient.h>
 #include <MQUnifiedsensor.h>
 #define type "MQ135"
-#define placa "ARD"
-#define Voltaje_Resolution 5
-#define ADC_Bit_Resolution 8
-#define pin D8
+#define placa "ESP8266"
+#define Voltaje_Resolution 3.3
+#define ADC_Bit_Resolution 10
+#define pin A0
+#define RatioMQ135CleanAir 3.6
+
+
 
 
 
@@ -62,7 +65,9 @@ void InitMqtt()
   client2.setServer(MQTT_BROKER_ADRESS, MQTT_PORT);
   client2.setCallback(OnMqttReceived);
 }
-
+float mapValue(float value, float in_min, float in_max, float out_min, float out_max) {
+  return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 //Setup
 void setup()
 {
@@ -71,7 +76,20 @@ void setup()
   Serial.print("Connecting to ");
   Serial.println(STASSID);
 
+  MQ135.setRegressionMethod(1);
+  MQ135.setA(110.47);
+  MQ135.setB(-2.862);
   MQ135.init();
+  float calcR0=0;
+  for(int i = 1; i<=10; i ++)
+  {
+    MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
+    calcR0 += MQ135.calibrate(RatioMQ135CleanAir);
+    Serial.print(".");
+  }
+  MQ135.setR0(calcR0/10);
+  Serial.println("  done!.");
+  MQ135.serialDebug(true);
   /* Explicitly set the ESP8266 to be a WiFi-client, otherwise, it by default,
      would try to act as both a client and an access-point and could cause
      network-issues with your other WiFi-devices on your WiFi-network. */
@@ -82,6 +100,7 @@ void setup()
     delay(500);
     Serial.print(".");
   }
+
 
   Serial.println("");
   Serial.println("WiFi connected");
@@ -242,7 +261,13 @@ void GET_tests()
 
 void POST_tests_sen()
 {
-  String post_body = serializeBodySen(1,1,"sen1", random(200, 400)/10);
+  MQ135.update();
+
+  long val=MQ135.readSensor();
+  long ppm_mapped = mapValue(val, 0, 10000, 1, 100);
+  Serial.println(ppm_mapped);
+  String post_body = serializeBodySen(1,1,"sen1", ppm_mapped);
+  MQ135.serialDebug();
   describe("Test POST with path and body and response");
   test_status(client.post("/api/sensores/new", post_body.c_str(), &response));
   test_response();
@@ -259,7 +284,7 @@ void POST_tests_Act()
 void reconnect() {
   while (!client2.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client2.connect("ESP8266Client")) {
+    if (client2.connect(MQTT_CLIENT_NAME)) {
       Serial.println("connected");
       client2.publish("topic_1", "Enviando el primer mensaje");
       client2.subscribe("topic_1");
@@ -274,7 +299,7 @@ void reconnect() {
 // Run the tests!
 void loop()
 {
-  if (!client2.connected()) {
+  /*if (!client2.connected()) {
   reconnect();
 }
 client2.loop();
@@ -284,10 +309,10 @@ if (now - lastMsg > 2000) {
   lastMsg = now;
   Serial.print("Publish message: ");
   Serial.println(msg);
-  client2.publish("api/sensores", msg);
-}
+  client2.publish("localhost", msg);
+}*/
   
-  GET_tests();
-  //POST_tests_sen();
+  //GET_tests();
+  POST_tests_sen();
   InitMqtt();
 }
