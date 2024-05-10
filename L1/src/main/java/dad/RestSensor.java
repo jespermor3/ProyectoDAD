@@ -38,14 +38,14 @@ public class RestSensor extends AbstractVerticle {
 	public static Map<Integer, Sensor> sensores=new HashMap<>();
 	
 	MySQLPool mySqlClient;
-	//MqttClient mqttClient;
+	MqttClient mqttClient;
 	
 	@Override
 	public void start(Promise<Void> startFuture) {
 		gson =  new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
 		MySQLConnectOptions connectOptions = new MySQLConnectOptions().setPort(3306).setHost("localhost")
 				.setDatabase("proyectodad").setUser("chema").setPassword("chema");
-		MqttClient mqttClient = MqttClient.create(vertx, new MqttClientOptions().setAutoKeepAlive(true));
+		mqttClient = MqttClient.create(vertx, new MqttClientOptions().setAutoKeepAlive(true));
 		mqttClient.connect(1883, "localhost", s -> {
 
 			mqttClient.subscribe("topic_2", MqttQoS.AT_LEAST_ONCE.value(), handler -> {
@@ -126,6 +126,9 @@ public class RestSensor extends AbstractVerticle {
 				connection.result().query("INSERT INTO sensores(id,placaid,nombre,valor) VALUES ("+sensor.getId()+","+
 			sensor.getPlacaid()+", '"+sensor.getNombre()+"' ,"+sensor.getValor()+");", res->{
 					if(res.succeeded()) {
+						if(sensor.getValor()>45) {
+							mqttClient.publish("topic_1", Buffer.buffer("ON"), MqttQoS.AT_LEAST_ONCE, false, false);
+						}
 						System.out.println(sensor);
 						routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
 						.end(gson.toJson(sensor));

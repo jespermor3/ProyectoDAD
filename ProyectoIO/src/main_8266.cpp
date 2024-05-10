@@ -35,11 +35,11 @@ long lastMsg = 0;
 char msg[50];
 
 // Server IP, where de MQTT broker is deployed
-const char *MQTT_BROKER_ADRESS = "192.168.237.42";
+const char *MQTT_BROKER_ADRESS = "localhost";
 const uint16_t MQTT_PORT = 1883;
 
 // Name for this MQTT client
-const char *MQTT_CLIENT_NAME = "ArduinoClient_1";
+const char *MQTT_CLIENT_NAME = "ESP8266Client_1";
 
 // callback a ejecutar cuando se recibe un mensaje
 // en este ejemplo, muestra por serial el mensaje recibido
@@ -95,7 +95,7 @@ void setup()
      network-issues with your other WiFi-devices on your WiFi-network. */
   WiFi.mode(WIFI_STA);
   WiFi.begin(STASSID, STAPSK);
-
+  InitMqtt();
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -261,13 +261,14 @@ void GET_tests()
 
 void POST_tests_sen()
 {
-  MQ135.update();
-
+  
   long val=MQ135.readSensor();
   long ppm_mapped = mapValue(val, 0, 10000, 1, 100);
+  Serial.println(val);
   Serial.println(ppm_mapped);
   String post_body = serializeBodySen(1,1,"sen1", ppm_mapped);
   MQ135.serialDebug();
+  MQ135.update();
   describe("Test POST with path and body and response");
   test_status(client.post("/api/sensores/new", post_body.c_str(), &response));
   test_response();
@@ -299,7 +300,8 @@ void reconnect() {
 // Run the tests!
 void loop()
 {
-  /*if (!client2.connected()) {
+  
+ if (!client2.connected()) {
   reconnect();
 }
 client2.loop();
@@ -310,9 +312,9 @@ if (now - lastMsg > 2000) {
   Serial.print("Publish message: ");
   Serial.println(msg);
   client2.publish("localhost", msg);
-}*/
+}
   
   //GET_tests();
   POST_tests_sen();
-  InitMqtt();
+  
 }
