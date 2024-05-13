@@ -28,7 +28,7 @@ create or replace table actuadores(
     Foreign key(placaid) references placas(id)
 );
 
-INSERT INTO placas(idgrupo,nombre) VALUES (1,'placa1');
+INSERT INTO placas(idgrupo,nombre) VALUES (1,'placa1'),(2,'placa2');
 
 INSERT INTO sensores(id,placaid,nombre,valor) VALUES 
 (1,1,'sen1',30.0);

@@ -46,7 +46,7 @@ public class RestSensor extends AbstractVerticle {
 		MySQLConnectOptions connectOptions = new MySQLConnectOptions().setPort(3306).setHost("localhost")
 				.setDatabase("proyectodad").setUser("chema").setPassword("chema");
 		mqttClient = MqttClient.create(vertx, new MqttClientOptions().setAutoKeepAlive(true));
-		mqttClient.connect(1883, "localhost", s -> {
+		mqttClient.connect(1883, "192.168.241.42", s -> {
 
 			mqttClient.subscribe("topic_2", MqttQoS.AT_LEAST_ONCE.value(), handler -> {
 				if (handler.succeeded()) {
@@ -126,8 +126,10 @@ public class RestSensor extends AbstractVerticle {
 				connection.result().query("INSERT INTO sensores(id,placaid,nombre,valor) VALUES ("+sensor.getId()+","+
 			sensor.getPlacaid()+", '"+sensor.getNombre()+"' ,"+sensor.getValor()+");", res->{
 					if(res.succeeded()) {
-						if(sensor.getValor()>45) {
+						if(sensor.getValor()>100) {
 							mqttClient.publish("topic_1", Buffer.buffer("ON"), MqttQoS.AT_LEAST_ONCE, false, false);
+						}else {
+							mqttClient.publish("topic_1", Buffer.buffer("OFF"), MqttQoS.AT_LEAST_ONCE, false, false);
 						}
 						System.out.println(sensor);
 						routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
