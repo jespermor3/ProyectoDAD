@@ -38,7 +38,10 @@ const char *MQTT_BROKER_ADRESS = "192.168.241.42";
 const uint16_t MQTT_PORT = 1883;
 
 // Name for this MQTT client
+//Sensor
 const char *MQTT_CLIENT_NAME = "ESP8266Client_1";
+//Actuador
+//const char *MQTT_CLIENT_NAME = "ESP8266Client_2";
 
 // callback a ejecutar cuando se recibe un mensaje
 // en este ejemplo, muestra por serial el mensaje recibido
@@ -242,13 +245,13 @@ void OnMqttReceived(char *topic, byte *payload, unsigned int length)
   if(estado!=content){
     if(content=="ON"){
       digitalWrite(BUILTIN_LED,LOW);
-      //digitalWrite(pin2,HIGH);
-      //POST_tests_Act(1);
+      digitalWrite(pin2,HIGH);
+      POST_tests_Act(1);
       
     }else{
       digitalWrite(BUILTIN_LED,HIGH);
-      //digitalWrite(pin2,LOW);
-      //POST_tests_Act(0);
+      digitalWrite(pin2,LOW);
+      POST_tests_Act(0);
       
     }
   }
@@ -320,17 +323,6 @@ if (!client2.connected()) {
   reconnect();
 }
 client2.loop();
-
-/*long now = millis();
-if (now - lastMsg > 2000)
-{
-  lastMsg = now;
-  Serial.print("Publish message: ");
-  Serial.println(msg);
-  client2.publish("192.168.241.42", msg);
-}*/
-
-
   //GET_tests();
   if(cont==0){
   POST_tests_sen();
