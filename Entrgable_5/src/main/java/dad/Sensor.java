@@ -11,33 +11,23 @@ import java.util.Objects;
 
 public class Sensor {
 	private Integer id;
+	private Integer idgrupo;
 	private Integer idvalor;
 	private Integer placaid;
 	private String nombre;
 	private Long fecha;
 	private Double valor;
-	public Sensor(Integer id, Integer idvalor, Integer placaid, String nombre, Long fecha, Double valor) {
-		super();
-		this.id = id;
-		this.idvalor = idvalor;
-		this.placaid = placaid;
-		this.nombre = nombre;
-		this.fecha = fecha;
-		this.valor = valor;
-	}
-	public Sensor(Integer id, Integer placaid, String nombre, Date fecha, Double valor) {
-		super();
-		this.id = id;
-		this.placaid = placaid;
-		this.nombre = nombre;
-		this.fecha = fecha.getTime();
-		this.valor = valor;
-	}
 	public Integer getId() {
 		return id;
 	}
 	public void setId(Integer id) {
 		this.id = id;
+	}
+	public Integer getIdgrupo() {
+		return idgrupo;
+	}
+	public void setIdgrupo(Integer idgrupo) {
+		this.idgrupo = idgrupo;
 	}
 	public Integer getIdvalor() {
 		return idvalor;
@@ -71,7 +61,7 @@ public class Sensor {
 	}
 	@Override
 	public int hashCode() {
-		return Objects.hash(fecha, id, idvalor, nombre, placaid, valor);
+		return Objects.hash(fecha, id, idgrupo, idvalor, nombre, placaid, valor);
 	}
 	@Override
 	public boolean equals(Object obj) {
@@ -83,15 +73,26 @@ public class Sensor {
 			return false;
 		Sensor other = (Sensor) obj;
 		return Objects.equals(fecha, other.fecha) && Objects.equals(id, other.id)
-				&& Objects.equals(idvalor, other.idvalor) && Objects.equals(nombre, other.nombre)
-				&& Objects.equals(placaid, other.placaid) && Objects.equals(valor, other.valor);
+				&& Objects.equals(idgrupo, other.idgrupo) && Objects.equals(idvalor, other.idvalor)
+				&& Objects.equals(nombre, other.nombre) && Objects.equals(placaid, other.placaid)
+				&& Objects.equals(valor, other.valor);
 	}
 	@Override
 	public String toString() {
-		return "Sensor [id=" + id + ", idvalor=" + idvalor + ", placaid=" + placaid + ", nombre=" + nombre + ", fecha="
-				+ fecha + ", valor=" + valor + "]";
+		return "Sensor [id=" + id + ", idgrupo=" + idgrupo + ", idvalor=" + idvalor + ", placaid=" + placaid
+				+ ", nombre=" + nombre + ", fecha=" + fecha + ", valor=" + valor + "]";
 	}
-	
+	public Sensor(Integer id, Integer idgrupo, Integer idvalor, Integer placaid, String nombre, Long fecha,
+			Double valor) {
+		super();
+		this.id = id;
+		this.idgrupo = idgrupo;
+		this.idvalor = idvalor;
+		this.placaid = placaid;
+		this.nombre = nombre;
+		this.fecha = fecha;
+		this.valor = valor;
+	}
 	
 
 }

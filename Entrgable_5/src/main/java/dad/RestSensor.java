@@ -2,8 +2,10 @@ package dad;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
@@ -46,20 +48,8 @@ public class RestSensor extends AbstractVerticle {
 		MySQLConnectOptions connectOptions = new MySQLConnectOptions().setPort(3306).setHost("localhost")
 				.setDatabase("proyectodad").setUser("chema").setPassword("chema");
 		mqttClient = MqttClient.create(vertx, new MqttClientOptions().setAutoKeepAlive(true));
-		mqttClient.connect(1883, "192.168.241.42", s -> {
+		mqttClient.connect(1883, "192.168.93.42", s -> {
 
-			mqttClient.subscribe("topic_2", MqttQoS.AT_LEAST_ONCE.value(), handler -> {
-				if (handler.succeeded()) {
-					System.out.println("Suscripción " + mqttClient.clientId());
-				}
-			});
-
-			mqttClient.publishHandler(handler -> {
-				System.out.println("Mensaje recibido:");
-				System.out.println("    Topic: " + handler.topicName().toString());
-				System.out.println("    Id del mensaje: " + handler.messageId());
-				System.out.println("    Contenido: " + handler.payload().toString());
-			});
 			mqttClient.publish("topic_1", Buffer.buffer("Ejemplo"), MqttQoS.AT_LEAST_ONCE, false, false);
 		});
 
@@ -77,6 +67,7 @@ public class RestSensor extends AbstractVerticle {
 		
 		router.route("/api/*").handler(BodyHandler.create());
 		router.get("/api/sensores").handler(this::getAllsen);
+		router.get("/api/placas/:id").handler(this::getByidplaca);
 		router.get("/api/sensores/:id").handler(this::getByidsen);
 		router.get("/api/actuadores/:id").handler(this::getByidAc);
 		router.get("/api/actuadores").handler(this::getAllac);
@@ -100,7 +91,7 @@ public class RestSensor extends AbstractVerticle {
 				RowSet<Row> resultSet = res.result();
 				JsonArray result = new JsonArray();
 				for (Row elem : resultSet) {
-					result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idvalor"), elem.getInteger("placaid"),
+					result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idgrupo"),elem.getInteger("idvalor"), elem.getInteger("placaid"),
 							elem.getString("nombre"), elem.getLong("fecha"),
 							elem.getDouble("valor"))));
 				}
@@ -123,13 +114,15 @@ public class RestSensor extends AbstractVerticle {
 		final Sensor sensor = gson.fromJson(routingContext.getBodyAsString(), Sensor.class);
 		mySqlClient.getConnection(connection -> {
 			if (connection.succeeded()) {
-				connection.result().query("INSERT INTO sensores(id,placaid,nombre,valor) VALUES ("+sensor.getId()+","+
+				connection.result().query("INSERT INTO sensores(id,idgrupo,placaid,nombre,valor) VALUES ("+sensor.getId()+","+sensor.getIdgrupo()+","+
 			sensor.getPlacaid()+", '"+sensor.getNombre()+"' ,"+sensor.getValor()+");", res->{
 					if(res.succeeded()) {
-						if(sensor.getValor()>100) {
-							mqttClient.publish("topic_1", Buffer.buffer("ON"), MqttQoS.AT_LEAST_ONCE, false, false);
+						String canal="topic_"+sensor.getIdgrupo();
+						if(sensor.getValor()>300) {
+							
+							mqttClient.publish(canal, Buffer.buffer("ON"), MqttQoS.AT_LEAST_ONCE, false, false);
 						}else {
-							mqttClient.publish("topic_1", Buffer.buffer("OFF"), MqttQoS.AT_LEAST_ONCE, false, false);
+							mqttClient.publish(canal, Buffer.buffer("OFF"), MqttQoS.AT_LEAST_ONCE, false, false);
 						}
 						System.out.println(sensor);
 						routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
@@ -185,7 +178,7 @@ public class RestSensor extends AbstractVerticle {
 		final Actuador sensor = gson.fromJson(routingContext.getBodyAsString(), Actuador.class);
 		mySqlClient.getConnection(connection -> {
 			if (connection.succeeded()) {
-				connection.result().query("INSERT INTO actuadores(id,placaid,nombre,estado,tipo) VALUES ("+sensor.getId()+","+
+				connection.result().query("INSERT INTO actuadores(id,idgrupo,placaid,nombre,estado,tipo) VALUES ("+sensor.getId()+","+sensor.getIdgrupo()+","+
 			sensor.getPlacaid()+", '"+sensor.getNombre()+" ',"+sensor.getEstado()+", '"+sensor.getTipo()+"');", res->{
 					if(res.succeeded()) {
 						System.out.println(sensor);
@@ -218,7 +211,7 @@ public class RestSensor extends AbstractVerticle {
 								RowSet<Row> resultSet = res.result();
 								JsonArray result = new JsonArray();
 								for (Row elem : resultSet) {
-									result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idvalor"),
+									result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idgrupo"),elem.getInteger("idvalor"),
 											elem.getInteger("placaid"), elem.getString("nombre"),
 											elem.getLong("fecha"), elem.getDouble("valor"))));
 								}
@@ -248,7 +241,7 @@ public class RestSensor extends AbstractVerticle {
 								System.out.println(resultSet.size());
 								JsonArray result = new JsonArray();
 								for (Row elem : resultSet) {
-									result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idestado"),
+									result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idgrupo"),elem.getInteger("idestado"),
 											elem.getInteger("placaid"), elem.getString("nombre"),
 											elem.getLong("fecha"), elem.getInteger("estado"),elem.getString("tipo"))));
 								}
@@ -324,6 +317,8 @@ public class RestSensor extends AbstractVerticle {
 		});
 	}
 	
+	
+	
 	private void getAllByidgrupoSensor(RoutingContext routingContext) {
 		final int par = Integer.parseInt(routingContext.request().getParam("idgrupo"));
 		mySqlClient.getConnection(connection -> {
@@ -340,7 +335,7 @@ public class RestSensor extends AbstractVerticle {
 												if(res1.succeeded()) {
 													RowSet<Row> resultSet1 = res1.result();
 													for(Row elem1:resultSet1) {
-														result.add(JsonObject.mapFrom(new Sensor(elem1.getInteger("id"),elem1.getInteger("idvalor"),
+														result.add(JsonObject.mapFrom(new Sensor(elem1.getInteger("id"),elem1.getInteger("idgrupo"),elem1.getInteger("idvalor"),
 															elem1.getInteger("placaid"), elem1.getString("nombre"),
 															elem1.getLong("fecha"), elem1.getDouble("valor"))));
 													}
@@ -381,7 +376,7 @@ public class RestSensor extends AbstractVerticle {
 												if(res1.succeeded()) {
 													RowSet<Row> resultSet1 = res1.result();
 													for(Row elem1:resultSet1) {
-														result.add(JsonObject.mapFrom(new Actuador(elem1.getInteger("id"),elem1.getInteger("idestado"),
+														result.add(JsonObject.mapFrom(new Actuador(elem1.getInteger("id"),elem1.getInteger("idgrupo"),elem1.getInteger("idestado"),
 																elem1.getInteger("placaid"), elem1.getString("nombre"),
 																elem1.getLong("fecha"), elem1.getInteger("estado"),elem1.getString("tipo"))));
 													}
@@ -414,7 +409,7 @@ public class RestSensor extends AbstractVerticle {
 				System.out.println(resultSet.size());
 				JsonArray result = new JsonArray();
 				for (Row elem : resultSet) {
-					result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idestado"), elem.getInteger("placaid"),
+					result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idgrupo"),elem.getInteger("idestado"), elem.getInteger("placaid"),
 							elem.getString("nombre"), elem.getLong("fecha"),
 							elem.getInteger("estado"),elem.getString("tipo"))));
 				}
@@ -458,7 +453,7 @@ public class RestSensor extends AbstractVerticle {
 								System.out.println(resultSet.size());
 								JsonArray result = new JsonArray();
 								for (Row elem : resultSet) {
-									result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idvalor"),
+									result.add(JsonObject.mapFrom(new Sensor(elem.getInteger("id"),elem.getInteger("idgrupo"),elem.getInteger("idvalor"),
 											elem.getInteger("placaid"), elem.getString("nombre"),
 											elem.getLong("fecha"), elem.getDouble("valor"))));
 								}
@@ -488,7 +483,7 @@ public class RestSensor extends AbstractVerticle {
 								System.out.println(resultSet.size());
 								JsonArray result = new JsonArray();
 								for (Row elem : resultSet) {
-									result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idestado"),
+									result.add(JsonObject.mapFrom(new Actuador(elem.getInteger("id"),elem.getInteger("idgrupo"),elem.getInteger("idestado"),
 											elem.getInteger("placaid"), elem.getString("nombre"),
 											elem.getLong("fecha"), elem.getInteger("estado"),elem.getString("tipo"))));
 								}
@@ -522,7 +517,7 @@ public class RestSensor extends AbstractVerticle {
 												if(res1.succeeded()) {
 													RowSet<Row> resultSet1 = res1.result();
 													for(Row elem1:resultSet1) {
-														result.add(JsonObject.mapFrom(new Sensor(elem1.getInteger("id"),elem1.getInteger("idvalor"),
+														result.add(JsonObject.mapFrom(new Sensor(elem1.getInteger("id"),elem1.getInteger("idgrupo"),elem1.getInteger("idvalor"),
 															elem1.getInteger("placaid"), elem1.getString("nombre"),
 															elem1.getLong("fecha"), elem1.getDouble("valor"))));
 													}
@@ -563,7 +558,7 @@ public class RestSensor extends AbstractVerticle {
 												if(res1.succeeded()) {
 													RowSet<Row> resultSet1 = res1.result();
 													for(Row elem1:resultSet1) {
-														result.add(JsonObject.mapFrom(new Actuador(elem1.getInteger("id"),elem1.getInteger("idestado"),
+														result.add(JsonObject.mapFrom(new Actuador(elem1.getInteger("id"),elem1.getInteger("idgrupo"),elem1.getInteger("idestado"),
 																elem1.getInteger("placaid"), elem1.getString("nombre"),
 																elem1.getLong("fecha"), elem1.getInteger("estado"),elem1.getString("tipo"))));
 													}

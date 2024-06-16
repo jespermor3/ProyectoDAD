@@ -11,15 +11,16 @@
 #define pin A0
 #define RatioMQ135CleanAir 3.6
 #define pin2 D8
-
+int idgrupo=2;
 String estado="";
+std::string canal ="topic_" + std::to_string(idgrupo);
 
 MQUnifiedsensor MQ135(placa, Voltaje_Resolution, ADC_Bit_Resolution, pin, type);
 
 int test_delay = 2000; //so we don't spam the API
 boolean describe_tests = true;
 
-RestClient client = RestClient("192.168.241.42", 8085);
+RestClient client = RestClient("192.168.93.42", 8085);
 
 String serverName = "http://localhost/";
 HTTPClient http;
@@ -34,12 +35,12 @@ long lastMsg = 0;
 char msg[50];
 
 // Server IP, where de MQTT broker is deployed
-const char *MQTT_BROKER_ADRESS = "192.168.241.42";
+const char *MQTT_BROKER_ADRESS = "192.168.93.42";
 const uint16_t MQTT_PORT = 1883;
 
 // Name for this MQTT client
 //Sensor
-const char *MQTT_CLIENT_NAME = "ESP8266Client_1";
+const char *MQTT_CLIENT_NAME = "ESP8266Client_2";
 //Actuador
 //const char *MQTT_CLIENT_NAME = "ESP8266Client_2";
 
@@ -47,7 +48,7 @@ const char *MQTT_CLIENT_NAME = "ESP8266Client_1";
 // en este ejemplo, muestra por serial el mensaje recibido
 String response;
 
-String serializeBodySen(int idSensor, int placaid,String nombre, double val)
+String serializeBodySen(int idSensor,int idgrupo, int placaid,String nombre, double val)
 {
   StaticJsonDocument<200> doc;
 
@@ -59,6 +60,7 @@ String serializeBodySen(int idSensor, int placaid,String nombre, double val)
   // Add values in the document
   //
   doc["id"] = idSensor;
+  doc["idgrupo"]=idgrupo;
   doc["placaid"] = placaid;
   doc["nombre"] = nombre;
   // Add an array.
@@ -69,28 +71,10 @@ String serializeBodySen(int idSensor, int placaid,String nombre, double val)
   //
   String output;
   serializeJson(doc, output);
-  // The above line prints:
-  // {"sensor":"gps","time":1351824120,"data":[48.756080,2.302038]}
-
-  // Start a new line
-  //Serial.println(output);
-
-  // Generate the prettified JSON and send it to the Serial port.
-  //
-  //serializeJsonPretty(doc, output);
-  // The above line prints:
-  // {
-  //   "sensor": "gps",
-  //   "time": 1351824120,
-  //   "data": [
-  //     48.756080,
-  //     2.302038
-  //   ]
-  // }
   return output;
 }
 
-String serializeBodyAct(int idSensor, int placaid,String nombre, int estado,String tipo)
+String serializeBodyAct(int idSensor,int idgrupo, int placaid,String nombre, int estado,String tipo)
 {
   StaticJsonDocument<200> doc;
 
@@ -102,6 +86,7 @@ String serializeBodyAct(int idSensor, int placaid,String nombre, int estado,Stri
   // Add values in the document
   //
   doc["id"] = idSensor;
+  doc["idgrupo"]=idgrupo;
   doc["placaid"] = placaid;
   doc["nombre"] = nombre;
 
@@ -201,7 +186,7 @@ void POST_tests_sen()
 {
   long val=MQ135.readSensor();
   long ppm_mapped = mapValue(val, 0, 1000, 1, 100);
-  String post_body = serializeBodySen(1,1,"sen1", ppm_mapped);
+  String post_body = serializeBodySen(1,idgrupo,3,"sen1", ppm_mapped);
   MQ135.update();
   describe("Test POST with path and body and response");
   test_status(client.post("/api/sensores/new", post_body.c_str(), &response));
@@ -210,7 +195,7 @@ void POST_tests_sen()
 
 void POST_tests_Act(int dato)
 {
-  String post_body = serializeBodyAct(1,2,"act1",dato, "rele");
+  String post_body = serializeBodyAct(1,idgrupo,2,"act1",dato, "rele");
   describe("Test POST with path and body and response");
   test_status(client.post("/api/actuadores/new", post_body.c_str(), &response));
   test_response();
@@ -221,7 +206,7 @@ void reconnect() {
     Serial.print("Attempting MQTT connection...");
     if (client2.connect(MQTT_CLIENT_NAME)) {
       Serial.println("connected");
-      client2.subscribe("topic_1");
+      client2.subscribe(canal.c_str());
     } else {
       Serial.print("failed, rc=");
       Serial.print(client2.state());
@@ -241,7 +226,7 @@ void OnMqttReceived(char *topic, byte *payload, unsigned int length)
   {
     content.concat((char)payload[i]);
   }
-  Serial.print(content);
+  Serial.println(content);
   if(estado!=content){
     if(content=="ON"){
       digitalWrite(BUILTIN_LED,LOW);
@@ -311,7 +296,8 @@ void setup()
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-  client2.subscribe("topic_1");
+  Serial.println(canal.c_str());
+  client2.subscribe(canal.c_str());
   Serial.println("Setup!");
 }
 
@@ -319,14 +305,17 @@ void setup()
 // Run the tests!
 void loop()
 {
-if (!client2.connected()) {
+ if (!client2.connected()) {
   reconnect();
 }
+
 client2.loop();
-  //GET_tests();
-  if(cont==0){
+
+  /*if(cont==0){
+   
   POST_tests_sen();
   cont=20000;
   }
   cont--;
+  */
 }
